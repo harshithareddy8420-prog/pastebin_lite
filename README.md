@@ -55,3 +55,8 @@ npm install
 ```bash
 npm run dev
 ```
+
+### Rersistence layer Note
+
+Pastebin Lite uses a **simple file-based persistence layer** to store paste data. All pastes are saved locally in a JSON file on the server, allowing the application to persist data across restarts without requiring an external database. This approach keeps the setup lightweight and easy to run locally, making it well-suited for demos and small-scale use cases, while avoiding the overhead of database configuration.
+

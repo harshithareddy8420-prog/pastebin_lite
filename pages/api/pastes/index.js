@@ -10,13 +10,13 @@ export default async function handler(req, res) {
   const id = nanoid(8);
   const now = Date.now();
 
-  await redis.set(`paste:${id}`, JSON.stringify({
-    content,
-    created_at: now,
-    expires_at: ttl_seconds ? now + ttl_seconds * 1000 : null,
-    max_views: max_views ?? null,
-    views: 0
-  }));
+  await redis.set(`paste:${id}`, {
+  content,
+  created_at: now,
+  expires_at: ttl_seconds ? now + ttl_seconds * 1000 : null,
+  max_views: max_views ?? null,
+  views: 0
+});
 
   res.status(201).json({ id, url: `${process.env.BASE_URL}/p/${id}` });
 }

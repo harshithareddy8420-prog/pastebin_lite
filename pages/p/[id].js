@@ -2,25 +2,48 @@ import redis from "../../lib/redis";
 import { getNow } from "../../lib/time";
 
 export async function getServerSideProps({ params, req, res }) {
-  const raw = await redis.get(`paste:${params.id}`);
-  if (!raw) { res.statusCode = 404; return { props: {} }; }
+  try {
+    const paste = await redis.get(`paste:${params.id}`);
 
-  const paste = JSON.parse(raw);
-  const now = getNow(req).getTime();
+    if (!paste) {
+      res.statusCode = 404;
+      return { props: {} };
+    }
 
-  if ((paste.expires_at && now > paste.expires_at) || 
-      (paste.max_views !== null && paste.views >= paste.max_views)) {
-    res.statusCode = 404;
+    const now = getNow(req).getTime();
+
+    if (
+      (paste.expires_at && now > paste.expires_at) ||
+      (paste.max_views !== null && paste.views >= paste.max_views)
+    ) {
+      res.statusCode = 404;
+      return { props: {} };
+    }
+
+    // increment views safely
+    await redis.set(`paste:${params.id}`, {
+      ...paste,
+      views: paste.views + 1
+    });
+
+    return {
+      props: {
+        content: paste.content
+      }
+    };
+  } catch (err) {
+    console.error("HTML paste error:", err);
+    res.statusCode = 500;
     return { props: {} };
   }
-
-  paste.views += 1;
-  await redis.set(`paste:${params.id}`, JSON.stringify(paste));
-
-  return { props: { content: paste.content } };
 }
 
 export default function Paste({ content }) {
-  if (!content) return <h1>404 - Not Found</h1>;
-  return <pre>{content}</pre>;
+  if (!content) return <h1>404 – Paste Not Found</h1>;
+
+  return (
+    <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+      {content}
+    </pre>
+  );
 }
